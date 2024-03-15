@@ -84,6 +84,12 @@ def create_app():
         return {"task_id":task.id}
 
 
+    @app.get("/chat/<project_id>")
+    def chat(project_id):
+        question = request.args.get("q")
+        docs = get_relevant_docs(project_id,question)
+        return get_from_ai(docs,question)
+
     @app.get("/result/<id>")
     def task_result(id: str) -> dict[str, object]:
         result = AsyncResult(id)

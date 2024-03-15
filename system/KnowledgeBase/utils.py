@@ -4,6 +4,7 @@ from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from bs4 import BeautifulSoup as Soup
 from langchain_community.document_loaders.youtube import YoutubeLoader
+from langchain.prompts import PromptTemplate
 from celery import shared_task
 from system.models.models import KnowledgeSource
 from system.db import db
@@ -43,9 +44,30 @@ def index_success_handler(result=None,sender=None,*args,**kwargs):
     db.session.commit()
 
 
-
 ### semantic search across all the project ids
-def get_relevant_docs(project_id):
+def get_relevant_docs(project_id,question):
     sources = KnowledgeSource.query.filter_by(project_id=project_id).all()
     locations = [source.get_location_of_faiss for source in sources]
-    return locations
+    result = []
+    for location in locations:
+        db = knowledge.get_db(location)
+        docs = db.similarity_search(question,k=20)
+        result.extend(docs)
+
+    return result
+
+
+def get_from_ai(docs,question):
+    prompt_template = """
+    Explore the Text Documents. 
+    If the answer is present in the context, provide comprehensive details. 
+    If not, derive the answer from the video content anyhow.
+    \n\n
+    Transcript:\n {context}?\n
+    Question: \n{question}\n
+
+    Answer:
+    """
+
+    prompt = PromptTemplate(template = prompt_template, input_variables = ["context", "question"])
+    return knowledge.chat(docs=docs,question=question,prompt=prompt)
