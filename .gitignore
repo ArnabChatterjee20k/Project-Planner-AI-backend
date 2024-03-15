@@ -178,3 +178,6 @@ pyrightconfig.json
 
 *.faiss
 *.pkl
+
+*.pdf
+*.sqlite
