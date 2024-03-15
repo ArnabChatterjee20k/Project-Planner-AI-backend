@@ -8,7 +8,7 @@ class Study(db.Model):
     knowledge_sources = db.relationship("KnowledgeSource",back_populates="study")
 
 class KnowledgeSource(db.Model):
-    id = db.Column("id",db.Integer,primary_key=True,auto_increment=True)
+    id = db.Column("id",db.String,primary_key=True,auto_increment=True)
     type = db.Column("type",db.String)
     task_id = db.Column("task_id",db.String)
     indexed = db.Column("indexed",db.Boolean,default=False)
@@ -19,5 +19,6 @@ class KnowledgeSource(db.Model):
     def get_location_of_faiss(self):
         id = self.id
         type = self.type
-
+        if type=="website":
+            type = "site"
         return f"{type}/{id}"
