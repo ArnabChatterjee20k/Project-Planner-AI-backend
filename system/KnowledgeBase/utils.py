@@ -1,8 +1,12 @@
 from system.KnowledgeBase.KnowledgeBase import KnowledgeBase
+import os
+from langchain_google_genai import GoogleGenerativeAI
+from langchain_core.output_parsers import JsonOutputParser
 from flask import g , current_app
 from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from bs4 import BeautifulSoup as Soup
+from langchain.prompts import PromptTemplate
 from langchain_community.document_loaders.youtube import YoutubeLoader
 from langchain.prompts import PromptTemplate
 from celery import shared_task
@@ -71,3 +75,22 @@ def get_from_ai(docs,question):
 
     prompt = PromptTemplate(template = prompt_template, input_variables = ["context", "question"])
     return knowledge.chat(docs=docs,question=question,prompt=prompt)
+
+def getPlan(idea):
+    api_key = os.environ["GOOGLE_API_KEY"]
+    model = GoogleGenerativeAI(
+        model="gemini-pro", google_api_key=api_key)
+    template = """
+            Generate me the following details about the app idea {idea}
+            ```json
+                AppNames:[],
+                techStack:[],
+                colorPalette:[],
+                todoItems: [],
+                ProjectFeatures:[]
+        ```
+        """
+    parser = JsonOutputParser()
+    prompt = PromptTemplate(template=template,input_variables=["idea"], partial_variables={"format_instructions": parser.get_format_instructions()},)
+    chain = prompt | model | parser
+    return chain.invoke({"idea":idea})
