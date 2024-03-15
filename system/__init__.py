@@ -9,7 +9,7 @@ from system.db import db
 from uuid import uuid4
 load_dotenv(".env")
 from system.models.models import *
-
+from flask_cors import CORS
 
 def celery_init_app(app: Flask) -> Celery:
     create_queue()
@@ -28,6 +28,7 @@ def celery_init_app(app: Flask) -> Celery:
 
 def create_app():
     app = Flask(__name__,template_folder="./views",static_folder="./contents")
+    CORS(app)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
     app.config['UPLOAD_FOLDER'] = "system/uploads/"
     db.init_app(app)
@@ -68,8 +69,7 @@ def create_app():
         task=""
         if type=="pdf":
             file = request.files.get("file")
-            file_ext = file.filename.split(".")[-1]
-            new_filename = f"{id}.{file_ext}"
+            new_filename = f"{id}.pdf"
             file.save(new_filename)
             task = index_pdf.delay(file=new_filename,id=id,type="pdf")
 
